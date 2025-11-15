@@ -9,6 +9,7 @@ class Snes9xClient {
         this.selectedPlayer = 0; // Default to Player 1 (port 0)
         this.frameCount = 0;
         this.lastFpsTime = Date.now();
+        this.adminEnabled = false;
         
         // Audio setup
         this.audioContext = null;
@@ -19,6 +20,7 @@ class Snes9xClient {
         this.audioEnabled = false;
         
         this.setupCanvas();
+        this.checkAdminStatus();
         this.setupControls();
         this.setupAudio();
         this.connect();
@@ -29,6 +31,31 @@ class Snes9xClient {
         this.canvas.height = 224;
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    async checkAdminStatus() {
+        try {
+            const response = await fetch('/api/admin-enabled');
+            const data = await response.json();
+            this.adminEnabled = data.adminEnabled || false;
+            this.updateAdminUI();
+        } catch (error) {
+            console.error('Error checking admin status:', error);
+            // Default to hiding admin features if check fails
+            this.adminEnabled = false;
+            this.updateAdminUI();
+        }
+    }
+
+    updateAdminUI() {
+        const adminElements = document.querySelectorAll('.admin-only');
+        adminElements.forEach(element => {
+            if (this.adminEnabled) {
+                element.classList.add('show');
+            } else {
+                element.classList.remove('show');
+            }
+        });
     }
 
     setupAudio() {

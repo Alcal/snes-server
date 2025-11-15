@@ -210,6 +210,14 @@
             background: #2a5a2a;
             border-color: #0f0;
         }
+
+        .admin-only {
+            display: none;
+        }
+
+        .admin-only.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -227,7 +235,7 @@
         </div>
 
         <div class="controls-panel">
-            <div class="control-group">
+            <div class="control-group admin-only" id="romManagementGroup">
                 <h3>ROM Management</h3>
                 <div class="file-input">
                     <label for="romFile">Load ROM</label>
@@ -271,7 +279,7 @@
                 </div>
             </div>
 
-            <div class="control-group">
+            <div class="control-group admin-only" id="emulatorControlsGroup">
                 <h3>Emulator Controls</h3>
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                     <button class="snes-button" id="resetBtn">Reset</button>
@@ -280,7 +288,7 @@
                 </div>
             </div>
 
-            <div class="control-group">
+            <div class="control-group admin-only" id="saveStatesGroup">
                 <h3>Save States</h3>
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                     <button class="snes-button" id="saveStateBtn">💾 Save State</button>
