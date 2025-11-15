@@ -1,0 +1,11 @@
+node_modules/
+build/
+*.log
+*.o
+*.a
+*.node
+.DS_Store
+*.swp
+*.swo
+*~
+.env

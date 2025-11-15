@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snes9x Web Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2a2a2a;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #444;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+        }
+
+        .status {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #f00;
+        }
+
+        .status-indicator.connected {
+            background: #0f0;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            position: relative;
+        }
+
+        #videoCanvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .controls-panel {
+            width: 300px;
+            background: #2a2a2a;
+            padding: 1rem;
+            overflow-y: auto;
+            border-left: 2px solid #444;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group h3 {
+            margin-bottom: 0.5rem;
+            color: #aaa;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .snes-button {
+            background: #444;
+            border: 2px solid #666;
+            color: #fff;
+            padding: 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+            text-align: center;
+            font-size: 0.8rem;
+            transition: all 0.1s;
+        }
+
+        .snes-button:active {
+            background: #666;
+            transform: scale(0.95);
+        }
+
+        .snes-button.pressed {
+            background: #0a0;
+            border-color: #0f0;
+        }
+
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.25rem;
+            width: 120px;
+            margin: 0 auto;
+        }
+
+        .dpad button {
+            background: #444;
+            border: 2px solid #666;
+            color: #fff;
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .dpad .up { grid-column: 2; }
+        .dpad .down { grid-column: 2; grid-row: 3; }
+        .dpad .left { grid-column: 1; grid-row: 2; }
+        .dpad .right { grid-column: 3; grid-row: 2; }
+
+        .file-input {
+            margin-bottom: 1rem;
+        }
+
+        .file-input input[type="file"] {
+            display: none;
+        }
+
+        .file-input label {
+            display: block;
+            background: #444;
+            border: 2px solid #666;
+            padding: 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .file-input label:hover {
+            background: #555;
+        }
+
+        .info {
+            background: #333;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+        }
+
+        .player-selector {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .player-option {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #444;
+            border: 2px solid #666;
+            padding: 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .player-option:hover {
+            background: #555;
+        }
+
+        .player-option input[type="radio"] {
+            margin-right: 0.5rem;
+            cursor: pointer;
+        }
+
+        .player-option input[type="radio"]:checked + span {
+            color: #0f0;
+            font-weight: bold;
+        }
+
+        .player-option:has(input[type="radio"]:checked) {
+            background: #2a5a2a;
+            border-color: #0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎮 Snes9x Web Interface</h1>
+        <div class="status">
+            <div class="status-indicator" id="statusIndicator"></div>
+            <span id="statusText">Disconnected</span>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="canvas-container">
+            <canvas id="videoCanvas"></canvas>
+        </div>
+
+        <div class="controls-panel">
+            <div class="control-group">
+                <h3>ROM Management</h3>
+                <div class="file-input">
+                    <label for="romFile">Load ROM</label>
+                    <input type="file" id="romFile" accept=".smc,.sfc,.swc,.fig,.bs,.st">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Player Selection</h3>
+                <div class="player-selector">
+                    <label class="player-option">
+                        <input type="radio" name="player" value="0" checked>
+                        <span>Player 1</span>
+                    </label>
+                    <label class="player-option">
+                        <input type="radio" name="player" value="1">
+                        <span>Player 2</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Controller</h3>
+                <div class="button-grid">
+                    <button class="snes-button" data-button="y">Y</button>
+                    <button class="snes-button" data-button="x">X</button>
+                    <button class="snes-button" data-button="l">L</button>
+                    <button class="snes-button" data-button="r">R</button>
+                    <button class="snes-button" data-button="a">A</button>
+                    <button class="snes-button" data-button="b">B</button>
+                    <button class="snes-button" data-button="select">Select</button>
+                    <button class="snes-button" data-button="start">Start</button>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <div class="dpad">
+                        <button class="up" data-button="up">↑</button>
+                        <button class="left" data-button="left">←</button>
+                        <button class="right" data-button="right">→</button>
+                        <button class="down" data-button="down">↓</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Emulator Controls</h3>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button class="snes-button" id="resetBtn">Reset</button>
+                    <button class="snes-button" id="pauseBtn">Pause</button>
+                    <button class="snes-button" id="enableAudioBtn">🔇 Enable Audio</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Save States</h3>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button class="snes-button" id="saveStateBtn">💾 Save State</button>
+                    <button class="snes-button" id="loadStateBtn">📂 Load State</button>
+                </div>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                    <button class="snes-button" id="saveStateToFileBtn">💾 Save to File</button>
+                    <button class="snes-button" id="loadStateFromFileBtn">📂 Load from File</button>
+                </div>
+            </div>
+
+            <div class="info" id="info">
+                <div>Width: <span id="width">256</span></div>
+                <div>Height: <span id="height">224</span></div>
+                <div>FPS: <span id="fps">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="client.js"></script>
+</body>
+</html>
+
